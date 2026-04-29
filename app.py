@@ -1,112 +1,99 @@
 import streamlit as st
 import pandas as pd
+import plotly.express as px
 
 st.set_page_config(layout="wide")
-st.title("📊 PORTABLE CT FAILURE ANALYSIS FOR YEAR 2025")
+st.title("📊 CT FAILURE INTELLIGENCE DASHBOARD")
 
 uploaded_file = st.file_uploader("Upload Excel File", type=["xlsx"])
 
-def show_section(title, df, note=None):
-    st.markdown(f"## {title}")
-    if note:
-        st.caption(note)
-    st.dataframe(df, use_container_width=True)
-
 if uploaded_file:
 
-    xls = pd.ExcelFile(uploaded_file)
+    df = pd.read_excel(uploaded_file)
 
-    # -------- SECTION 1 --------
-    df1 = pd.read_excel(xls, sheet_name=0)
-    show_section(
-        "1. CT INSTALLATION BASE OVERALL",
-        df1,
-        "*Includes Open Installations"
-    )
+    # ---------------- CLEANING ----------------
+    df.columns = df.columns.str.strip()
 
-    # -------- SECTION 2 --------
-    df2 = pd.read_excel(xls, sheet_name=1)
-    show_section(
-        "2. CT OVERALL INSTALLATION BASE - YEAR WISE",
-        df2,
-        "*Includes Open Installations"
-    )
+    # Convert dates
+    date_cols = ["ENTRY DATE", "FRN_DATE", "CURRENT DATE"]
+    for col in date_cols:
+        if col in df.columns:
+            df[col] = pd.to_datetime(df[col], errors='coerce')
 
-    # -------- SECTION 3 --------
-    df3 = pd.read_excel(xls, sheet_name=2)
-    show_section(
-        "3. CT INSTALLATION BASE – REGION VS MODEL",
-        df3,
-        "*Includes Open Installations"
-    )
+    # ---------------- KPI ----------------
+    st.header("📌 KEY METRICS")
 
-    # -------- SECTION 4 --------
-    df4 = pd.read_excel(xls, sheet_name=3)
-    show_section(
-        "4. CT OVERALL DEFECTIVES – REGION VS MODEL",
-        df4
-    )
+    total_cases = len(df)
+    total_scrap = len(df[df["TYPE_OF_WORK"] == "SCRAPPED"])
+    total_completed = len(df[df["TYPE_OF_WORK"] == "COMPLETED"])
+    total_pending = len(df[df["STATUS"] == "Pending"])
 
-    # -------- SECTION 5 --------
-    df5 = pd.read_excel(xls, sheet_name=4)
-    show_section(
-        "5. CT OVERALL DEFECTIVES – MODEL VS PRODUCT TYPE",
-        df5
-    )
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Total Cases", total_cases)
+    c2.metric("Scrapped", total_scrap)
+    c3.metric("Completed", total_completed)
+    c4.metric("Pending", total_pending)
 
-    # -------- SECTION 6 --------
-    df6 = pd.read_excel(xls, sheet_name=5)
-    show_section(
-        "6. CT OVERALL DEFECTIVES – MODEL VS WARRANTY",
-        df6
-    )
+    # ---------------- REGION ANALYSIS ----------------
+    st.header("🌍 Region-wise Failures")
 
-    # -------- SECTION 7 --------
-    df7 = pd.read_excel(xls, sheet_name=6)
-    show_section(
-        "7. CT OVERALL DEFECTIVES – ACTION TAKEN",
-        df7
-    )
+    region_df = df["REGION"].value_counts().reset_index()
+    region_df.columns = ["Region", "Count"]
 
-    # -------- SECTION 8 --------
-    df8 = pd.read_excel(xls, sheet_name=7)
-    show_section(
-        "8. BODYTOM NL – 4000 OVERALL FAILURE",
-        df8
-    )
+    fig1 = px.bar(region_df, x="Region", y="Count", title="Failures by Region")
+    st.plotly_chart(fig1, use_container_width=True)
 
-    # -------- SECTION 9 --------
-    df9 = pd.read_excel(xls, sheet_name=8)
-    show_section(
-        "9. CERETOM NL – 3000 OVERALL FAILURE",
-        df9
-    )
+    # ---------------- MODEL ANALYSIS ----------------
+    st.header("🏥 Model-wise Failures")
 
-    # -------- SECTION 10 --------
-    df10 = pd.read_excel(xls, sheet_name=9)
-    show_section(
-        "10. OMNITOM NL – 5000 OVERALL FAILURE",
-        df10
-    )
+    model_df = df["PRODUCT_MODEL"].value_counts().reset_index()
+    model_df.columns = ["Model", "Count"]
 
-    # -------- SECTION 11 --------
-    df11 = pd.read_excel(xls, sheet_name=10)
-    show_section(
-        "11. CT OVERALL SCRAPPED ITEMS",
-        df11
-    )
+    fig2 = px.bar(model_df, x="Model", y="Count", title="Failures by Model")
+    st.plotly_chart(fig2, use_container_width=True)
 
-    # -------- KPI --------
-    st.markdown("## 📌 FINAL INSIGHTS")
+    # ---------------- DEFECT TYPE ----------------
+    st.header("⚙️ Defect Type Analysis")
 
-    total_install = df1.iloc[-1, -1]
-    total_failure = df4.iloc[-1, -2]
-    total_scrap = df11.iloc[:, -1].sum()
+    defect_df = df["DEF_TYPE"].value_counts().reset_index()
+    defect_df.columns = ["Defect Type", "Count"]
 
-    c1, c2, c3 = st.columns(3)
-    c1.metric("Total Installations", total_install)
-    c2.metric("Total Failures", total_failure)
-    c3.metric("Total Scrapped", total_scrap)
+    fig3 = px.pie(defect_df, names="Defect Type", values="Count")
+    st.plotly_chart(fig3, use_container_width=True)
+
+    # ---------------- SCRAP ANALYSIS ----------------
+    st.header("🗑 Scrap Components")
+
+    scrap_df = df[df["TYPE_OF_WORK"] == "SCRAPPED"]
+
+    if not scrap_df.empty:
+        comp_df = scrap_df["MOD_BRD_NAME"].value_counts().reset_index()
+        comp_df.columns = ["Component", "Count"]
+
+        fig4 = px.bar(comp_df, x="Component", y="Count", title="Most Scrapped Components")
+        st.plotly_chart(fig4, use_container_width=True)
+
+    # ---------------- ENGINEER PERFORMANCE ----------------
+    st.header("👨‍🔧 Engineer Performance")
+
+    eng_df = df["ENGINEER"].value_counts().reset_index()
+    eng_df.columns = ["Engineer", "Cases"]
+
+    fig5 = px.bar(eng_df, x="Engineer", y="Cases")
+    st.plotly_chart(fig5, use_container_width=True)
+
+    # ---------------- PENDING DAYS ----------------
+    st.header("⏳ Pending Days Analysis")
+
+    if "PENDING DAYS(URP)" in df.columns:
+        df["PENDING DAYS(URP)"] = pd.to_numeric(df["PENDING DAYS(URP)"], errors='coerce')
+
+        fig6 = px.histogram(df, x="PENDING DAYS(URP)", nbins=20)
+        st.plotly_chart(fig6, use_container_width=True)
+
+    # ---------------- RAW DATA ----------------
+    st.header("📄 Full Data Table")
+    st.dataframe(df, use_container_width=True)
 
 else:
-    st.info("Upload Excel with same structure (11 sheets)")
+    st.info("Upload your Excel file")
