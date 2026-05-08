@@ -4,6 +4,32 @@ import plotly.express as px
 import plotly.graph_objects as go
 
 # =========================================================
+# DOWNLOAD FUNCTION
+# =========================================================
+def download_excel(dataframe, filename):
+
+    output = pd.ExcelWriter(
+        filename,
+        engine="openpyxl"
+    )
+
+    dataframe.to_excel(
+        output,
+        index=False
+    )
+
+    output.close()
+
+    with open(filename, "rb") as f:
+
+        st.download_button(
+            label="⬇ Download Excel Report",
+            data=f,
+            file_name=filename,
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+
+# =========================================================
 # PAGE CONFIG
 # =========================================================
 st.set_page_config(
@@ -204,6 +230,11 @@ if uploaded_file:
         ] = 100.0
 
         st.dataframe(summary_table, use_container_width=True)
+        
+        download_excel(
+            summary_table,
+            "CT_Overall_Defectives_Region_vs_Model.xlsx"
+        )
 
         chart_df = summary_table[
             summary_table["Region / Model"] != "Grand Total"
@@ -265,6 +296,11 @@ if uploaded_file:
 
         st.dataframe(summary_table, use_container_width=True)
 
+        download_excel(
+            summary_table,
+            "CT_Overall_Defectives_Model_vs_ProductType.xlsx"
+        )
+
         chart_df = summary_table[
             summary_table["Model / Type"] != "Grand Total"
         ]
@@ -324,6 +360,11 @@ if uploaded_file:
         ] = 100.0
 
         st.dataframe(summary_table, use_container_width=True)
+        
+        download_excel(
+            summary_table,
+            "CT_ProductType_vs_Warranty.xlsx"
+        )
 
         chart_df = summary_table[
             summary_table["Product Type / Warranty"] != "Grand Total"
@@ -384,6 +425,11 @@ if uploaded_file:
         ] = 100.0
 
         st.dataframe(summary_table, use_container_width=True)
+
+        download_excel(
+            summary_table,
+            "CT_Model_vs_TypeOfWork.xlsx"
+        )
 
         chart_df = summary_table[
             summary_table["Model / Type of Work"] != "Grand Total"
@@ -463,6 +509,11 @@ if uploaded_file:
         ] = 100.0
 
         st.dataframe(summary_table, use_container_width=True)
+        
+        download_excel(
+            summary_table,
+            f"{selected_model}_ModBoard_vs_Warranty.xlsx"
+        )
 
         chart_df = summary_table[
             summary_table["Module Board / Warranty"] != "Grand Total"
@@ -585,6 +636,11 @@ if uploaded_file:
                 pivot,
                 use_container_width=True
             )
+            
+            download_excel(
+                pivot,
+                f"{model}_Scrapped_Items.xlsx"
+            )
 
             fig = px.bar(
                 pivot,
@@ -622,6 +678,19 @@ if uploaded_file:
         col3.metric(
             "Grand Total",
             overall_total
+        )
+        overall_summary = pd.DataFrame({
+            "Category": ["Consumables", "Spares", "Grand Total"],
+            "Count": [
+                overall_consumables,
+                overall_spare,
+                overall_total
+            ]
+        })
+        
+        download_excel(
+            overall_summary,
+            "CT_Overall_Scrap_Summary.xlsx"
         )
 
 else:
