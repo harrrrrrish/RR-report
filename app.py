@@ -7,7 +7,7 @@ import plotly.graph_objects as go
 # PAGE CONFIG
 # =========================================================
 st.set_page_config(
-    page_title="RR Analysis APP",
+    page_title="RR Analysis Dashboard",
     page_icon="📊",
     layout="wide"
 )
