@@ -52,7 +52,7 @@ h1, h2, h3 {
 # =========================================================
 # TITLE
 # =========================================================
-st.title("📊 CT FAILURE ANALYSIS DASHBOARD")
+st.title("📊 RR ANALYSIS DASHBOARD")
 st.markdown("### Upload Excel File for Automatic Analysis")
 
 # =========================================================
